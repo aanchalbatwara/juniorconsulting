@@ -66,9 +66,9 @@
 
   /* ---------- hero ---------- */
   .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding-top:110px;padding-bottom:var(--pad);position:relative;overflow:hidden}
-  .word{font-weight:900;line-height:.8;letter-spacing:-.015em;font-size:clamp(64px,21.4vw,340px);white-space:nowrap;will-change:transform}
+  .word{font-weight:900;line-height:.8;letter-spacing:-.015em;font-size:clamp(48px,17vw,300px);white-space:nowrap;will-change:transform}
   .word span{display:block;overflow:hidden;padding-bottom:.02em}
-  .word b{display:block;font-weight:inherit;transform:translateY(102%);animation:up 1.1s var(--ease) forwards}
+  .word b{display:inline-block;font-weight:inherit;transform:translateY(102%);animation:up 1.1s var(--ease) forwards}
   .word span:nth-child(2) b{animation-delay:.1s;color:var(--red)}
   @keyframes up{to{transform:none}}
   .hero-foot{display:grid;grid-template-columns:1fr 1fr auto;gap:24px;align-items:end;border-top:2px solid var(--black);margin-top:28px;padding-top:18px;opacity:0;animation:fade .8s .7s forwards}
@@ -470,6 +470,17 @@
   addEventListener('scroll', () => requestAnimationFrame(olUpdate), { passive: true });
   addEventListener('resize', olUpdate);
   olUpdate();
+
+  /* hero title: size it so the longest line always fits the screen width */
+  const fitWord = () => {
+    word.style.fontSize = '';
+    const avail = word.clientWidth, widest = Math.max(...[...word.querySelectorAll('b')].map(b => b.offsetWidth));
+    const fs = parseFloat(getComputedStyle(word).fontSize);
+    if (widest > 0) word.style.fontSize = Math.min(fs * avail / widest * 0.99, 300) + 'px';
+  };
+  fitWord();
+  if (document.fonts) document.fonts.ready.then(fitWord);
+  addEventListener('resize', fitWord);
 
   /* count-up on bento */
   const io = new IntersectionObserver(es => es.forEach(e => {
