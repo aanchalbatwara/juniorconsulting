@@ -79,11 +79,13 @@
   .down:hover{transform:translateY(4px)}
   .down svg{width:18px;height:18px}
 
-  /* ---------- marquee ---------- */
-  .ticker{background:var(--red);color:var(--white);overflow:hidden;padding:20px 0;transform:rotate(-1.2deg) scale(1.02);margin:10px 0 0}
-  .ticker div{display:inline-flex;white-space:nowrap;animation:slide 26s linear infinite}
-  .ticker span{font-weight:800;font-size:clamp(28px,4vw,52px);padding-right:44px;display:inline-flex;align-items:center;gap:44px}
-  .ticker span:after{content:"";width:.32em;height:.32em;background:var(--white);border-radius:50%}
+  /* ---------- outlined words ---------- */
+  .outline{overflow:hidden;padding:clamp(48px,6vw,96px) 0;border-bottom:1px solid var(--rule);display:grid;gap:clamp(4px,1vw,14px)}
+  .outline .track{display:flex;width:max-content;will-change:transform}
+  .outline span{font-weight:900;font-stretch:62.5%;text-transform:uppercase;font-size:clamp(52px,8.2vw,132px);line-height:.92;padding-right:.45em;color:transparent;-webkit-text-stroke:1.5px #c4c4c4;transition:color .35s,-webkit-text-stroke-color .35s}
+  .outline .track.two span{-webkit-text-stroke-color:#d6d6d6}
+  .outline span.lit{color:var(--red);-webkit-text-stroke-color:var(--red)}
+  .outline .track.two span.lit{color:var(--black);-webkit-text-stroke-color:var(--black)}
   @keyframes slide{to{transform:translateX(-50%)}}
 
   /* ---------- sections ---------- */
@@ -274,11 +276,9 @@
     </div>
   </section>
 
-  <div class="ticker cond" aria-hidden="true">
-    <div>
-      <span>Strategy</span><span>Public affairs</span><span>Market research</span><span>Communication</span><span>EU policy</span><span>Translation</span>
-      <span>Strategy</span><span>Public affairs</span><span>Market research</span><span>Communication</span><span>EU policy</span><span>Translation</span>
-    </div>
+  <div class="outline" id="outline" aria-hidden="true">
+    <div class="track one"><span>Strategy</span><span>Public affairs</span><span>Market research</span><span>Communication</span><span>EU policy</span><span>Translation</span><span>Strategy</span><span>Public affairs</span><span>Market research</span><span>Communication</span><span>EU policy</span><span>Translation</span><span>Strategy</span><span>Public affairs</span><span>Market research</span><span>Communication</span><span>EU policy</span><span>Translation</span></div>
+    <div class="track two"><span>Companies</span><span>Institutions</span><span>Associations</span><span>Start-ups</span><span>Local government</span><span>NGOs</span><span>Companies</span><span>Institutions</span><span>Associations</span><span>Start-ups</span><span>Local government</span><span>NGOs</span><span>Companies</span><span>Institutions</span><span>Associations</span><span>Start-ups</span><span>Local government</span><span>NGOs</span></div>
   </div>
 
   <section class="block px" id="about">
@@ -434,7 +434,7 @@
   const onScroll = () => {
     const y = scrollY, h = document.body.scrollHeight - innerHeight;
     prog.style.transform = `scaleX(${h > 0 ? y / h : 0})`;
-    if (!reduce) word.style.transform = `translateY(${y * 0.25}px) scale(${1 - Math.min(y / innerHeight, 1) * 0.08})`;
+    if (!reduce) word.style.transform = `translateY(${-y * 0.12}px) scale(${1 - Math.min(y / innerHeight, 1) * 0.06})`; word.style.transformOrigin = 'left bottom';
     const r = st.getBoundingClientRect();
     const p = Math.min(Math.max((innerHeight * 0.85 - r.top) / (r.height + innerHeight * 0.35), 0), 1);
     const n = Math.round(p * words.length);
@@ -445,6 +445,25 @@
   };
   addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(onScroll); ticking = true; } }, { passive: true });
   onScroll();
+
+  /* outlined words: two rows move opposite ways with scroll; word nearest the centre lights up */
+  const ol = document.getElementById('outline');
+  const rows = [...ol.querySelectorAll('.track')].map((el, i) => ({ el, dir: i ? 1 : -1, words: [...el.children] }));
+  const olUpdate = () => {
+    const r = ol.getBoundingClientRect();
+    if (r.bottom < -200 || r.top > innerHeight + 200) return;
+    const travel = Math.max(innerHeight - r.top, 0), mid = innerWidth / 2;
+    rows.forEach(row => {
+      const start = row.dir < 0 ? 0 : -row.el.scrollWidth * 0.4;
+      if (!reduce) row.el.style.transform = `translateX(${start + row.dir * travel * 0.8}px)`;
+      let best = null, bd = Infinity;
+      row.words.forEach(w => { const b = w.getBoundingClientRect(), d = Math.abs((b.left + b.right) / 2 - mid); if (d < bd) { bd = d; best = w; } });
+      row.words.forEach(w => w.classList.toggle('lit', w === best));
+    });
+  };
+  addEventListener('scroll', () => requestAnimationFrame(olUpdate), { passive: true });
+  addEventListener('resize', olUpdate);
+  olUpdate();
 
   /* count-up on bento */
   const io = new IntersectionObserver(es => es.forEach(e => {
